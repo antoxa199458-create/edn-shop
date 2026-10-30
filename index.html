@@ -1017,6 +1017,92 @@
     .o-drawer.open .o-step, .o-drawer.open .o-title, .o-drawer.open .o-eyebrow, .o-drawer.open .o-lead { animation: none !important; }
     .cz-rule, .cz-hair { transform: none !important; transition: none !important; }
   }
+
+  /* Ozon product photos are 3:4 — show them whole */
+  .feature-card .img { aspect-ratio: 3 / 4; }
+
+  /* =====================================================================
+     Phones and small tablets — the desktop layout above is untouched
+     ===================================================================== */
+  @media (max-width: 860px) {
+    :root { --section-gap: 76px; }
+
+    /* header: logo · language · order */
+    .nav { gap: 10px; padding: 0 14px; }
+    .nav .btn-order { display: inline-flex; padding: 11px 14px; font-size: 10.5px; letter-spacing: .12em; animation: none; box-shadow: none; }
+    .lang-btn { height: 36px; }
+
+    /* cover */
+    .ed-hero-copy { padding: 92px 20px 34px; }
+    .ed-kicker { gap: 10px; margin-bottom: 22px; font-size: 10px; letter-spacing: .16em; }
+    .ed-kicker .micro-line { width: 22px; }
+    .ed-lead { font-size: 16px; margin: 22px 0 28px; }
+    .ed-actions { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .ed-actions .btn { width: 100%; justify-content: center; padding: 18px 20px; }
+    .ed-hero-note { gap: 8px 18px; margin-top: 26px; font-size: 11px; }
+    .ed-hero-note span, .ed-hero-note span:first-child { display: inline-flex; align-items: center; gap: 8px; padding: 0; border: 0; }
+    .ed-hero-note span::before { content: ""; width: 4px; height: 4px; border-radius: 50%; background: var(--rose); }
+
+    /* 360°: a long, calm scroll for the whole turn */
+    .spin { height: 330vh; }
+    .spin-sticky { padding: 74px 16px 18px; gap: 6px; }
+    .spin .heading-lg { font-size: 34px; }
+    .deg { font-size: 44px; }
+    .side-label { font-size: 18px; }
+    .views { gap: 6px; margin-top: 10px; }
+    .views span { padding: 6px 9px; font-size: 10px; letter-spacing: .12em; }
+    .stage { height: min(56svh, 520px); }
+
+    /* "In detail": a swipeable row of whole photos */
+    .grid-3 { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -24px; padding: 0 24px 6px; scrollbar-width: none; }
+    .grid-3::-webkit-scrollbar { display: none; }
+    .feature-card { flex: 0 0 78%; scroll-snap-align: center; }
+    .feature-card .img { aspect-ratio: 3 / 4; }
+    .feature-card .label { font-size: 22px; }
+
+    /* atelier */
+    .cz-stage { position: relative; }
+    .cz-badge { width: 76px; height: 76px; top: -24px; right: -4px; }
+    .cz-mast { font-size: 30vw; bottom: -0.1em; transform: translateX(-50%); }
+    .cz-tabs { flex-wrap: wrap; overflow: visible; margin: 0 0 16px; padding: 0; }
+    .cz-tab { padding: 10px 12px; }
+    .cz-opts { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; min-height: 0; }
+    .cz-opt { padding: 8px 4px 10px; font-size: 12px; }
+    .cz-opt .ph { width: 100%; height: auto; aspect-ratio: 1; }
+    .cz-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 18px; padding-top: 18px; }
+    .cz-actions #czLook { grid-column: 1 / -1; }
+    .cz-actions .btn { padding: 14px 10px; }
+    .cz-links { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .cz-buy { white-space: normal; max-width: 100%; }
+
+    /* shop: the whole product photo */
+    .shop-media { aspect-ratio: 3 / 4; }
+
+    /* benefits two by two */
+    .benefits { grid-template-columns: 1fr 1fr; gap: 30px 16px; }
+    .benefit { padding-top: 20px; }
+    .benefit svg { width: 24px; height: 24px; margin-bottom: 14px; }
+    .benefit .heading-sm { font-size: 19px; }
+    .benefit p { font-size: 13.5px; line-height: 1.5; }
+
+    /* reviews */
+    .quote p { font-size: 21px; }
+    .quote:first-child p { font-size: 26px; }
+    .score .num { font-size: 64px; }
+
+    /* gift: order across, marketplaces side by side */
+    .gift .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .gift .btn-row .btn { width: 100%; padding: 16px 10px; }
+    .gift .btn-row .btn:first-child, .gift .btn-row .btn:last-child { grid-column: 1 / -1; }
+  }
+  @media (max-width: 480px) {
+    .grid-3 { margin: 0 -16px; padding: 0 16px 6px; }
+    .feature-card { flex-basis: 82%; }
+  }
+  @media (max-width: 380px) {
+    .nav-ig { display: none; }
+    .cz-opts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  }
 </style>
 </head>
 <body>
@@ -1887,13 +1973,17 @@
       z.style.transform = `translateY(${(p * -34).toFixed(1)}px)`;
     });
   }
+  const SPIN_REST = 0.06;
+  const touch = matchMedia('(pointer: coarse)').matches;
   function sectionProgress(el) {
     const r = el.getBoundingClientRect();
     return clamp(-r.top / (r.height - innerHeight));
   }
   function frame() {
-    targetAngle = sectionProgress(spinSection) * 360;
-    angle += (targetAngle - angle) * (reduced ? 1 : 0.09);
+    // a short rest on the front view as the studio pins and before it leaves, the turn in between
+    targetAngle = clamp((sectionProgress(spinSection) - SPIN_REST) / (1 - 2 * SPIN_REST)) * 360;
+    // on touch screens the model trails the swipe a little more, so a quick flick doesn't snap it round
+    angle += (targetAngle - angle) * (reduced ? 1 : touch ? 0.055 : 0.09);
     renderSpin();
     const doc = document.documentElement;
     nav.style.setProperty('--sp', (scrollY / (doc.scrollHeight - innerHeight)).toFixed(4));
