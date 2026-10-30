@@ -2319,7 +2319,7 @@
       btn.setAttribute('aria-pressed', 'true');
       pick.colour = btn.dataset.colour;
       renderPick();
-      showShopMedia();
+      showShopMedia(true);
       // phones: if the photo has slid up under the header, bring it back so the new colour is seen at once
       if (matchMedia('(max-width: 860px)').matches) {
         const r = shopImg.parentElement.getBoundingClientRect();
@@ -2397,7 +2397,8 @@
 
   /* The black longsleeve shows a short video of the girl turning once in it; other colours show their photo.
      The video loads only when the shop is near and plays once, while it is on screen; then she stays on the last
-     frame (no endless loop). Visitors who ask for less motion see the still first frame. */
+     frame (no endless loop) until the black swatch is clicked again or the page is opened anew.
+     Visitors who ask for less motion see the still first frame. */
   const shopVideo = document.getElementById('shopVideo');
   const shopMedia = shopImg.parentElement;
   let shopVisible = false;
@@ -2407,10 +2408,14 @@
     if (on) { const p = shopVideo.play(); if (p) p.catch(() => {}); } else shopVideo.pause();
     if (player) player.run(on);
   }
-  function showShopMedia() {
+  // restart = the black longsleeve was picked again: she turns once more from the start
+  function showShopMedia(restart) {
     shopMedia.classList.toggle('has-video', pick.colour === 'black');
+    if (restart && pick.colour === 'black' && player && shopVideo.currentTime > 0) shopVideo.currentTime = 0;
     playShopVideo();
   }
+  // coming back to the page (the browser's back button keeps it as it was) starts the turn over as well
+  addEventListener('pageshow', e => { if (e.persisted) showShopMedia(true); });
   if (player) {
     shopVideo.addEventListener('loadeddata', () => player.draw());
     shopVideo.addEventListener('seeked', () => player.draw());
