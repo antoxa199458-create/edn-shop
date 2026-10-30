@@ -1061,7 +1061,8 @@
     .feature-card .label { font-size: 22px; }
 
     /* atelier */
-    .cz-stage { position: relative; }
+    /* not sticky on phones, but still the frame for its corners, flash and badge (the desktop sticky offset must go) */
+    .cz-stage { position: relative; top: auto; }
     .cz-badge { width: 76px; height: 76px; top: -24px; right: -4px; }
     .cz-mast { font-size: 30vw; bottom: -0.1em; transform: translateX(-50%); }
     .cz-tabs { flex-wrap: wrap; overflow: visible; margin: 0 0 16px; padding: 0; }
