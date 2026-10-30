@@ -36,6 +36,7 @@ window.EDN_I18N = {
       'del.boxberry': 'Boxberry', 'del.yandex': 'Яндекс Доставка', 'del.5post': '5Post',
       'del.pvzN': 'в пункт выдачи', 'del.courierN': 'до двери', 'del.postN': 'в отделение, по России и СНГ',
       'pay.online': 'онлайн при оформлении заказа', 'ord.countryDef': 'Россия',
+      'ord.goods': 'Товары', 'ord.totalL': 'Итого', 'ord.plusDelivery': '+ доставка', 'ord.deliveryTbd': 'по тарифу службы',
       'del.yandexN': 'пункт выдачи или курьер', 'del.5postN': 'постаматы и «Пятёрочка»',
       'ord.pvz': 'Адрес пункта выдачи', 'ord.sizeL': 'Размер', 'ord.qty': 'Кол-во', 'ord.remove': 'Убрать',
       'ord.item': 'Лонгслив E.D.N с куколкой', 'ord.summary': 'Ваш заказ', 'ord.pcs': 'Всего, шт.',

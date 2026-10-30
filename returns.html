@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; base-uri 'self'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Покупателям — E.D.N</title>
+<meta name="description" content="Продавец, цены, оплата, доставка и возврат лонгсливов E.D.N.">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Display:ital,wght@0,300..500;1,300..500&family=Manrope:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="legal.css">
+</head>
+<body>
+<header class="top"><a class="logo" href="./">E.D.N</a><a class="back" href="./">← На сайт</a></header>
+<main>
+  <p class="eyebrow">Покупателям</p>
+  <h1>Оплата, доставка <em>и возврат</em></h1>
+  <p class="meta">Редакция от 30.10.2026</p>
+  <ul class="toc">
+    <li><a href="#seller">Продавец</a></li><li><a href="#price">Цены</a></li><li><a href="#pay">Оплата</a></li>
+    <li><a href="#delivery">Доставка</a></li><li><a href="#return">Возврат</a></li><li><a href="#defect">Брак</a></li>
+  </ul>
+
+  <h2 id="seller">Продавец</h2>
+  <div class="card">
+    <dl class="seller">
+      <dt>Продавец</dt><dd><span data-seller="name"></span></dd>
+      <dt>ИНН</dt><dd><span data-seller="inn"></span></dd>
+      <dt>ОГРН / ОГРНИП</dt><dd><span data-seller="ogrn"></span></dd>
+      <dt>Адрес</dt><dd><span data-seller="address"></span></dd>
+      <dt>Эл. почта</dt><dd><a data-seller="email"></a></dd>
+      <dt>Телефон</dt><dd><a data-seller="phone"></a></dd>
+      <dt>Instagram</dt><dd><a data-seller="instagram" target="_blank" rel="noopener"></a></dd>
+    </dl>
+  </div>
+  <p class="note">Товар также продаётся на Ozon и Wildberries — там действуют условия этих площадок.</p>
+
+  <h2 id="price">Цены</h2>
+  <p>Цена лонгслива на сайте совпадает с ценой на Ozon при оплате картой любого банка на дату, указанную рядом с ценой. В форме заказа сразу видна стоимость товаров; если у службы доставки нет фиксированного тарифа, доставка указывается как «по тарифу службы».</p>
+  <p>Итоговую сумму — товары и доставку до вашего города — менеджер подтверждает до оплаты. Если она вас не устроит, заказ можно отменить бесплатно.</p>
+
+  <h2 id="pay">Оплата</h2>
+  <p>Заказ оплачивается онлайн при оформлении: после подтверждения состава, суммы и способа доставки менеджер присылает ссылку на оплату. Мы не принимаем и не храним данные банковских карт — оплата проходит на странице платёжного сервиса. Чек направляется на телефон или электронную почту.</p>
+
+  <h2 id="delivery">Доставка</h2>
+  <ul>
+    <li>По России и в страны СНГ: СДЭК (пункт выдачи или курьер), Почта России, Boxberry, Яндекс Доставка, 5Post.</li>
+    <li>Отправляем со склада в Краснодарском крае. Срок зависит от города и службы доставки — менеджер назовёт его при подтверждении заказа и пришлёт трек-номер.</li>
+    <li>Стоимость доставки — по тарифу выбранной службы, её оплачивает покупатель вместе с заказом.</li>
+  </ul>
+
+  <h2 id="return">Возврат товара надлежащего качества</h2>
+  <p>Покупка на сайте — дистанционная, поэтому действуют правила статьи 26.1 Закона РФ «О защите прав потребителей»:</p>
+  <ul>
+    <li>от заказа можно отказаться в любое время до его получения;</li>
+    <li>после получения — в течение <b>7 дней</b>, если сохранены товарный вид, потребительские свойства, ярлыки, а также документ, подтверждающий покупку (его отсутствие не лишает права сослаться на другие доказательства);</li>
+    <li>деньги возвращаются не позднее <b>10 дней</b> с даты, когда мы получили требование о возврате, за вычетом расходов на доставку возвращённого товара обратно к нам;</li>
+    <li>обмен на другой размер или цвет — по согласованию с менеджером, при наличии нужного варианта.</li>
+  </ul>
+
+  <h2 id="defect">Если с товаром что-то не так</h2>
+  <p>Если пришёл товар с производственным браком или не тот, что вы заказали, напишите нам в течение срока службы товара: по выбору покупателя мы заменим его, уменьшим цену или вернём деньги (статья 18 Закона «О защите прав потребителей»). Расходы на пересылку в этом случае несёт продавец.</p>
+
+  <h2>Как оформить возврат</h2>
+  <ol>
+    <li>Напишите на <a data-seller="email"></a> или в <a href="https://www.instagram.com/e.d.n_shop/" target="_blank" rel="noopener">Instagram</a>: номер заказа (например, EDN-ABC123), что возвращаете и причину; при браке приложите фото.</li>
+    <li>Менеджер подтвердит возврат и подскажет адрес и удобный способ отправки.</li>
+    <li>После получения и проверки товара вернём деньги тем же способом, которым была оплата.</li>
+  </ol>
+  <p class="note">Как мы обращаемся с вашими данными — в <a href="privacy.html">политике конфиденциальности</a>.</p>
+</main>
+<footer><span>© 2026 E.D.N</span><a href="./">Главная</a><a href="privacy.html">Политика конфиденциальности</a></footer>
+<script src="legal.js"></script>
+</body>
+</html>

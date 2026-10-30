@@ -3,6 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Security: the page may only load its own files, Google Fonts and (for orders) formsubmit.co; no plugins, no foreign forms.
+     GitHub Pages cannot send headers, so this policy travels in the page itself. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://formsubmit.co; form-action 'self'; base-uri 'self'; object-src 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<!-- the shop is not shown inside other sites' frames (protects the order form from click-jacking) -->
+<script>if (window.top !== window.self) { try { window.top.location.replace(window.location.href); } catch (e) { document.documentElement.style.display = 'none'; } }</script>
 <title>E.D.N — одежда, с которой можно играть</title>
 <meta name="description" content="Интерактивный лонгслив для девочек: куколке можно менять причёску, платье и обувь. 100% хлопок, размеры 98–134.">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
@@ -18,7 +24,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Display:ital,wght@0,300..500;1,300..500&family=Noto+Serif:wght@350..500&family=Manrope:wght@400;500;600&family=Noto+Serif+Armenian:wght@300..500&family=Noto+Sans+Armenian:wght@400..600&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="assets/turn-000.webp">
+<link rel="preload" as="image" href="assets/ed-hero.webp" fetchpriority="high">
 <style>
   :root {
     --color-linen-canvas: #f7f5f3;
@@ -1164,6 +1170,30 @@
   @media (prefers-reduced-motion: reduce) {
     .btn-brand::before, .btn-brand::after, .to-top { transition: none !important; }
   }
+
+  /* ---------- Prices ---------- */
+  .shop-price { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 14px; margin-top: 18px; }
+  .shop-price b { font-family: var(--font-display); font-weight: 350; font-size: clamp(34px, 3.6vw, 44px); letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
+  .shop-price > span { font-size: 12.5px; color: var(--color-stone); }
+  .o-price { font-weight: 600; font-size: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .o-side { gap: 10px; }
+  .o-sum b small { font-family: var(--font-sans); font-size: 13px; color: var(--color-stone); letter-spacing: 0; }
+  .o-legal { margin: 10px 0 0 30px; font-size: 13px; color: var(--color-stone); }
+  .o-consent a, .o-legal a { color: inherit; text-decoration-color: var(--rose); text-underline-offset: 3px; }
+  /* the bot trap stays out of sight and out of the tab order */
+  .o-hp { position: absolute !important; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+  @media (max-width: 860px) {
+    .shop-panel > .shop-price { order: 4; }
+    .o-side { justify-content: space-between; }
+  }
+
+  /* ---------- Lighter motion on phones: no endless glow, no letter-spacing animation, no blur behind the header ---------- */
+  .rv-track { letter-spacing: .2em; transform: translateY(14px); transition: opacity 1.1s ease .1s, transform 1.4s var(--ease-out) .1s; }
+  .rv-track.in { transform: none; }
+  @media (pointer: coarse), (max-width: 860px) {
+    .btn-order { animation: none; }
+    .nav.scrolled { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(243, 240, 234, .97); }
+  }
 </style>
 </head>
 <body>
@@ -1305,22 +1335,22 @@
           <text class="cz-badge-star" x="100" y="112" text-anchor="middle">✦</text>
         </svg>
         <div class="cz-canvas" id="czCanvas">
-          <img class="cz-shirt on" data-shirt="black" src="assets/c-shirt-black.webp" alt="">
-          <img class="cz-shirt" data-shirt="anthracite" src="assets/c-shirt-anthracite.webp" alt="">
-          <img class="cz-shirt" data-shirt="mint" src="assets/c-shirt-mint.webp" alt="">
-          <img class="cz-shirt" data-shirt="pink" src="assets/c-shirt-pink.webp" alt="">
+          <img class="cz-shirt on" loading="lazy" data-shirt="black" src="assets/c-shirt-black.webp" alt="">
+          <img class="cz-shirt" loading="lazy" data-shirt="anthracite" src="assets/c-shirt-anthracite.webp" alt="">
+          <img class="cz-shirt" loading="lazy" data-shirt="mint" src="assets/c-shirt-mint.webp" alt="">
+          <img class="cz-shirt" loading="lazy" data-shirt="pink" src="assets/c-shirt-pink.webp" alt="">
           <div class="cz-doll" role="img" aria-label="Кукла на лонгсливе" id="czDoll">
             <!-- layer order = how the outfit sits on the real doll: braids hang behind the body, the arch lies on the head -->
-            <img class="cz-layer" data-part="hair" src="assets/c-hair-back.webp" alt="">
-            <img class="cz-layer always" src="assets/c-base.webp" alt="">
-            <img class="cz-layer" data-part="hair" src="assets/c-hair-shadow.webp" alt="">
-            <img class="cz-layer" data-part="shoes" src="assets/c-shoes.webp" alt="">
+            <img class="cz-layer" loading="lazy" data-part="hair" src="assets/c-hair-back.webp" alt="">
+            <img class="cz-layer always" loading="lazy" src="assets/c-base.webp" alt="">
+            <img class="cz-layer" loading="lazy" data-part="hair" src="assets/c-hair-shadow.webp" alt="">
+            <img class="cz-layer" loading="lazy" data-part="shoes" src="assets/c-shoes.webp" alt="">
             <!-- dress = tutu + corset, put on together (the corset point lies over the tutu) -->
-            <img class="cz-layer" data-part="dress" src="assets/c-skirt.webp" alt="">
-            <img class="cz-layer" data-part="dress" src="assets/c-top.webp" alt="">
-            <img class="cz-layer" data-part="hair" src="assets/c-hair-front.webp" alt="">
-            <img class="cz-layer always" src="assets/c-earrings.webp" alt="">
-            <img class="cz-layer" data-part="crown" src="assets/c-crown.webp" alt="">
+            <img class="cz-layer" loading="lazy" data-part="dress" src="assets/c-skirt.webp" alt="">
+            <img class="cz-layer" loading="lazy" data-part="dress" src="assets/c-top.webp" alt="">
+            <img class="cz-layer" loading="lazy" data-part="hair" src="assets/c-hair-front.webp" alt="">
+            <img class="cz-layer always" loading="lazy" src="assets/c-earrings.webp" alt="">
+            <img class="cz-layer" loading="lazy" data-part="crown" src="assets/c-crown.webp" alt="">
           </div>
         </div>
       </div>
@@ -1420,6 +1450,7 @@
           <span><b data-ozon="rating">4,9</b> · <span data-ozon="reviews">22 отзыва</span> <span data-i18n="shop.onOzon">на Ozon</span> ↗</span>
         </a>
         <span class="src"><span data-i18n="shop.src">по данным Ozon на</span> <span data-ozon="checked">29.10.2026</span></span>
+        <div class="shop-price"><b id="priceNow">1 965 ₽</b><span><span data-i18n="price.note">цена как на Ozon при оплате картой любого банка, на</span> <span data-ozon="priceDate">30.10.2026</span></span></div>
 
         <div class="field">
           <div class="field-label"><span data-i18n="shop.colour">Цвет</span><b id="colorName">Чёрный</b></div>
@@ -1578,6 +1609,8 @@
       <a href="#spin">360°</a>
       <a href="#constructor" data-i18n="foot.constructor">Конструктор</a>
       <a href="#order" data-i18n="foot.order">Заказ на сайте</a>
+      <a href="returns.html" data-i18n="foot.buyers">Покупателям</a>
+      <a href="privacy.html" data-i18n="foot.privacy">Политика конфиденциальности</a>
       <a href="https://www.ozon.ru/seller/e-d-n/" target="_blank" rel="noopener">Ozon</a>
       <a href="https://www.wildberries.ru/seller/250201809" target="_blank" rel="noopener">Wildberries</a>
       <a href="https://www.instagram.com/e.d.n_shop/" target="_blank" rel="noopener">Instagram</a>
@@ -1609,9 +1642,9 @@
       <fieldset class="o-step" style="--k:1">
         <legend><b>2</b><span data-i18n="ord.s2">Контакты</span></legend>
         <div class="o-grid">
-          <label class="o-field o-wide"><span data-i18n="ord.name">Имя и фамилия</span><input name="name" autocomplete="name" required></label>
-          <label class="o-field"><span data-i18n="ord.phone">Телефон</span><input name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+7 900 000-00-00" required></label>
-          <label class="o-field"><span data-i18n="ord.email">Эл. почта (необязательно)</span><input name="email" type="email" autocomplete="email"></label>
+          <label class="o-field o-wide"><span data-i18n="ord.name">Имя и фамилия</span><input name="name" autocomplete="name" maxlength="80" required></label>
+          <label class="o-field"><span data-i18n="ord.phone">Телефон</span><input name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="+7 900 000-00-00" maxlength="24" required></label>
+          <label class="o-field"><span data-i18n="ord.email">Эл. почта (необязательно)</span><input name="email" type="email" autocomplete="email" maxlength="120"></label>
         </div>
         <div class="o-label" data-i18n="ord.via">Как удобнее связаться</div>
         <div class="o-pills">
@@ -1626,18 +1659,21 @@
         <legend><b>3</b><span data-i18n="ord.s3">Доставка</span></legend>
         <div class="o-cards" id="oDelivery"></div>
         <div class="o-grid">
-          <label class="o-field"><span data-i18n="ord.country">Страна</span><input name="country" autocomplete="country-name" required></label>
-          <label class="o-field"><span data-i18n="ord.city">Город</span><input name="city" autocomplete="address-level2" required></label>
+          <label class="o-field"><span data-i18n="ord.country">Страна</span><input name="country" autocomplete="country-name" maxlength="60" required></label>
+          <label class="o-field"><span data-i18n="ord.city">Город</span><input name="city" autocomplete="address-level2" maxlength="80" required></label>
           <label class="o-field" id="oIndexField"><span data-i18n="ord.index">Индекс</span><input name="index" autocomplete="postal-code" maxlength="10"></label>
-          <label class="o-field o-wide"><span id="oAddrLabel" data-i18n="ord.address">Адрес</span><input name="address" autocomplete="street-address" required></label>
+          <label class="o-field o-wide"><span id="oAddrLabel" data-i18n="ord.address">Адрес</span><input name="address" autocomplete="street-address" maxlength="200" required></label>
         </div>
       </fieldset>
 
       <fieldset class="o-step" style="--k:3">
         <legend><b>4</b><span data-i18n="ord.s4">Оплата</span></legend>
         <div class="o-paynote"><i aria-hidden="true"></i><p data-i18n="pay.note">Оплата — онлайн, при оформлении заказа. Ссылку на оплату пришлёт менеджер вместе с подтверждением.</p></div>
-        <label class="o-field o-wide"><span data-i18n="ord.comment">Комментарий к заказу</span><textarea name="comment" rows="3"></textarea></label>
-        <label class="o-consent"><input type="checkbox" name="consent" required><span data-i18n="ord.consent">Согласен(на) на обработку персональных данных для оформления и доставки заказа</span></label>
+        <label class="o-field o-wide"><span data-i18n="ord.comment">Комментарий к заказу</span><textarea name="comment" rows="3" maxlength="1000"></textarea></label>
+        <label class="o-consent"><input type="checkbox" name="consent" required><span data-i18n="ord.consent">Согласен(на) на обработку персональных данных для оформления и доставки заказа в соответствии с <a href="privacy.html" target="_blank" rel="noopener">политикой конфиденциальности</a></span></label>
+        <p class="o-legal" data-i18n="ord.legal">Оформляя заказ, вы принимаете <a href="returns.html" target="_blank" rel="noopener">условия оплаты, доставки и возврата</a></p>
+        <!-- left empty by people; bots fill every field, and such orders are dropped -->
+        <input class="o-hp" name="website" tabindex="-1" autocomplete="off" aria-hidden="true">
       </fieldset>
       <p class="o-error" id="oError" role="alert"></p>
     </form>
@@ -1680,6 +1716,15 @@
      Every colour × size is its own Ozon card; sizes not listed here are out of stock. */
   const OZON = {
     checked: '29.10.2026',
+    pricesChecked: '30.10.2026',
+    // site prices, ₽ = the Ozon price for a card of any bank on pricesChecked (the Ozon Bank card price is lower);
+    // "_" is the colour's usual price, used for sizes that are not on Ozon right now
+    prices: {
+      black:      { 116: 2171, 122: 1965, 128: 2072, _: 2190 },
+      anthracite: { 122: 2190, _: 2190 },
+      mint:       { 98: 2190, 110: 2190, 116: 2190, 134: 2190, _: 2190 },
+      pink:       { 134: 2190, _: 2190 }
+    },
     rating: '4,9',
     reviews: 22,
     reviewsUrl: 'https://www.ozon.ru/product/longsliv-e-d-n-5747080780/reviews/',
@@ -1692,6 +1737,8 @@
     }
   };
   const ozonCard = sku => `https://www.ozon.ru/product/longsliv-e-d-n-${sku}/`;
+  const priceOf = (colour, size) => { const p = OZON.prices[colour] || {}; return p[size] ?? p._ ?? 2190; };
+  const rub = n => n.toLocaleString('ru-RU') + ' ₽';
   // exact colour + size if it is in stock, else the colour's nearest size, else the shop
   function ozonLink(colour, size) {
     const sizes = OZON.variants[colour];
@@ -1707,6 +1754,7 @@
     document.querySelectorAll('[data-ozon="rating"]').forEach(el => el.textContent = OZON.rating);
     document.querySelectorAll('[data-ozon="reviews"]').forEach(el => el.textContent = tn('reviews', OZON.reviews));
     document.querySelectorAll('[data-ozon="checked"]').forEach(el => el.textContent = OZON.checked);
+    document.querySelectorAll('[data-ozon="priceDate"]').forEach(el => el.textContent = OZON.pricesChecked);
     document.querySelectorAll('[data-ozon="source"]').forEach(el => el.href = OZON.reviewsUrl);
   }
   fillOzon();
@@ -1785,8 +1833,11 @@
     ].map((t, i) => ({ ...t, p: i * 1.7, p2: i * 2.9 }));
     const FIBRES = [-3.4, 0, 3.4]; // three twisted fibres per thread read as yarn, not a line
 
+    // phones: the threads are drawn at screen resolution 1 and 30 times a second — the same look for far less work
+    const LIGHT = matchMedia('(pointer: coarse), (max-width: 860px)').matches;
+    let lastDraw = 0;
     function resize() {
-      dpr = Math.min(window.devicePixelRatio || 1, 1.75);
+      dpr = LIGHT ? 1 : Math.min(window.devicePixelRatio || 1, 1.75);
       w = innerWidth; h = innerHeight;
       cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -1820,7 +1871,11 @@
       }
     }
     let running = true;
-    function loop(time) { if (running) { draw(time); requestAnimationFrame(loop); } }
+    function loop(time) {
+      if (!running) return;
+      if (!LIGHT || time - lastDraw > 32) { draw(time); lastDraw = time; }
+      requestAnimationFrame(loop);
+    }
     resize();
     addEventListener('resize', () => { resize(); if (reduced) draw(0); });
     if (!reduced) {
@@ -1943,15 +1998,17 @@
   const frames = FRAME_ANGLES.map(a => {
     const img = document.createElement('img');
     img.className = 'layer';
-    img.src = FRAME_SRC[a];
+    img.dataset.src = FRAME_SRC[a]; // loaded when the studio comes near, not with the first screen
     img.alt = '';
     img.draggable = false;
     img.style.opacity = a === 0 ? 1 : 0;
     spinner.appendChild(img);
-    // decode up front so a frame never paints blank the first time it is shown
-    if (img.decode) img.decode().catch(() => {});
     return img;
   });
+  // load and decode all frames a screen and a half before the studio, so a frame never paints blank when shown
+  function loadFrames() {
+    frames.forEach(f => { if (!f.getAttribute('src')) { f.src = f.dataset.src; if (f.decode) f.decode().catch(() => {}); } });
+  }
   // The two frames around an angle and how far we are between them (wraps 330° → 360°/0°)
   function framePair(a) {
     const norm = ((a % 360) + 360) % 360;
@@ -1970,6 +2027,9 @@
   const floor = document.getElementById('floor');
   const hotspots = [...document.querySelectorAll('.hotspot')];
   const spinSection = document.getElementById('spin');
+  new IntersectionObserver((entries, obs) => {
+    if (entries.some(e => e.isIntersecting)) { loadFrames(); obs.disconnect(); }
+  }, { rootMargin: '150% 0px' }).observe(spinSection);
   let angle = 0, targetAngle = 0;
 
   /* A real 3D model can replace the photos: put assets/model.glb next to the page and set HAS_3D to true
@@ -2065,7 +2125,9 @@
     targetAngle = clamp((sectionProgress(spinSection) - SPIN_REST) / (1 - 2 * SPIN_REST)) * 360;
     // on touch screens the model trails the swipe a little more, so a quick flick doesn't snap it round
     angle += (targetAngle - angle) * (reduced ? 1 : touch ? 0.055 : 0.09);
-    renderSpin();
+    // the turntable is only drawn while the studio is on (or next to) the screen
+    const sr = spinSection.getBoundingClientRect();
+    if (sr.bottom > -innerHeight && sr.top < innerHeight * 2) renderSpin();
     const doc = document.documentElement;
     nav.style.setProperty('--sp', (scrollY / (doc.scrollHeight - innerHeight)).toFixed(4));
     nav.classList.toggle('scrolled', scrollY > 40);
@@ -2096,7 +2158,12 @@
     const shirts = [...document.querySelectorAll('.cz-shirt')];
     const opts = document.getElementById('czOpts');
     const note = document.getElementById('czNote');
-    [...document.querySelectorAll('#czDoll img, .cz-shirt')].forEach(i => i.decode && i.decode().catch(() => {}));
+    // the doll's layers load as lazy images; once the atelier is near, decode them so a change never flickers
+    new IntersectionObserver((entries, obs) => {
+      if (!entries.some(e => e.isIntersecting)) return;
+      [...document.querySelectorAll('#czDoll img, .cz-shirt')].forEach(i => { i.loading = 'eager'; if (i.decode) i.decode().catch(() => {}); });
+      obs.disconnect();
+    }, { rootMargin: '120% 0px' }).observe(document.getElementById('constructor'));
 
     const czBuy = document.getElementById('czBuy');
     const czOrder = document.getElementById('czOrder');
@@ -2226,6 +2293,7 @@
     sizeName.textContent = chip ? `${pick.size} · ${tn('age', +chip.dataset.age)}` : '';
     colorName.textContent = t('col.' + pick.colour);
     buyBtn.href = ozonLink(pick.colour, pick.size);
+    document.getElementById('priceNow').textContent = rub(priceOf(pick.colour, pick.size));
     buyBtn.textContent = 'Ozon'; // the link still opens the chosen size
   }
   addEventListener('edn:lang', renderPick);
@@ -2273,15 +2341,17 @@
     const COLOURS = { black: '#1f1c1d', anthracite: '#4b4d54', mint: '#9fdccc', pink: '#f3b5c8' };
     const THUMB = Object.fromEntries([...document.querySelectorAll('.swatch')].map(b => [b.dataset.colour, b.querySelector('img').src]));
     const AGES = { 98: 3, 110: 5, 116: 6, 122: 7, 128: 8, 134: 9 };
-    // address: what the address line asks for; index: the post office needs a postcode
+    // address: what the address line asks for; index: the post office needs a postcode;
+    // price: the shop's usual delivery cost in ₽, shown as "≈" in the total — null shows "at the carrier's rate"
     const DELIVERY = [
-      { id: 'cdek-pvz', note: 'del.pvzN', addr: 'ord.pvz' },
-      { id: 'cdek-courier', note: 'del.courierN', addr: 'ord.address' },
-      { id: 'post', note: 'del.postN', addr: 'ord.address', index: true },
-      { id: 'boxberry', note: 'del.pvzN', addr: 'ord.pvz' },
-      { id: 'yandex', note: 'del.yandexN', addr: 'ord.address' },
-      { id: '5post', note: 'del.5postN', addr: 'ord.pvz' }
+      { id: 'cdek-pvz', note: 'del.pvzN', addr: 'ord.pvz', price: null },
+      { id: 'cdek-courier', note: 'del.courierN', addr: 'ord.address', price: null },
+      { id: 'post', note: 'del.postN', addr: 'ord.address', index: true, price: null },
+      { id: 'boxberry', note: 'del.pvzN', addr: 'ord.pvz', price: null },
+      { id: 'yandex', note: 'del.yandexN', addr: 'ord.address', price: null },
+      { id: '5post', note: 'del.5postN', addr: 'ord.pvz', price: null }
     ];
+    const goodsTotal = () => S.items.reduce((a, it) => a + priceOf(it.colour, it.size) * it.qty, 0);
     const $ = id => document.getElementById(id);
     const drawer = $('orderDrawer'), overlay = $('oOverlay'), form = $('orderForm'), itemsBox = $('oItems'), cardsBox = $('oDelivery');
     const summary = $('oSummary'), done = $('oDone'), err = $('oError'), submitBtn = $('oSubmit'), bodyBox = $('oBody');
@@ -2330,6 +2400,8 @@
       row.querySelectorAll('.o-dots button').forEach(b => b.setAttribute('aria-checked', b.dataset.colour === it.colour ? 'true' : 'false'));
       row.querySelectorAll('.o-sizes button').forEach(b => b.setAttribute('aria-checked', +b.dataset.size === it.size ? 'true' : 'false'));
       row.querySelector('output').textContent = it.qty;
+      const each = priceOf(it.colour, it.size);
+      row.querySelector('.o-price').textContent = it.qty > 1 ? `${it.qty} × ${rub(each)} = ${rub(each * it.qty)}` : rub(each);
     }
     function itemRow(it, isNew) {
       const row = document.createElement('div');
@@ -2343,6 +2415,7 @@
           <div class="o-sizes" role="radiogroup" aria-label="${esc(t('ord.sizeL'))}">${Object.keys(AGES).map(s => `<button type="button" role="radio" data-size="${s}">${s}</button>`).join('')}</div>
         </div>
         <div class="o-side">
+          <b class="o-price"></b>
           <div class="o-qty"><button type="button" data-q="-1" aria-label="−">−</button><output></output><button type="button" data-q="1" aria-label="+">+</button></div>
           <button type="button" class="o-remove">${t('ord.remove')}</button>
         </div>`;
@@ -2388,9 +2461,14 @@
       const c = form.elements.country;
       if (!c.value || c.value === S.country) { S.country = t('ord.countryDef'); c.value = S.country; }
     }
+    // the total: goods at the site price, plus the delivery estimate when the shop has set one
     function renderSummary() {
-      const pcs = S.items.reduce((a, it) => a + it.qty, 0);
-      summary.innerHTML = `<b>${t('ord.summary')}</b><span>${t('ord.pcs')}: ${pcs} · ${t('del.' + S.delivery)}</span>`;
+      const pcs = S.items.reduce((a, it) => a + it.qty, 0), goods = goodsTotal();
+      const d = DELIVERY.find(x => x.id === S.delivery);
+      const del = d.price == null ? t('ord.deliveryTbd') : '≈ ' + rub(d.price);
+      const total = d.price == null ? `${rub(goods)} <small>${t('ord.plusDelivery')}</small>` : '≈ ' + rub(goods + d.price);
+      summary.innerHTML = `<b>${t('ord.totalL')} ${total}</b>
+        <span>${t('ord.goods')} (${pcs}): ${rub(goods)} · ${t('del.' + S.delivery)}: ${del}</span>`;
     }
     form.addEventListener('input', e => { const f = e.target.closest('.o-field, .o-consent'); if (f) f.classList.remove('bad'); err.textContent = ''; });
     form.addEventListener('change', e => { const f = e.target.closest('.o-consent'); if (f) f.classList.remove('bad'); });
@@ -2424,7 +2502,10 @@
     // the letter the shop receives — always in Russian
     function orderText(o) {
       const lines = [`Заказ ${o.id} · ${o.createdAt}`, '', 'Товары:'];
-      o.items.forEach(it => lines.push(`— ${tRu('ord.item')}: ${tRu('col.' + it.colour).toLowerCase()}, ${it.size} (${tnRu('age', AGES[it.size])}) × ${it.qty}`));
+      o.items.forEach(it => lines.push(`— ${tRu('ord.item')}: ${tRu('col.' + it.colour).toLowerCase()}, ${it.size} (${tnRu('age', AGES[it.size])}) × ${it.qty} — ${rub(priceOf(it.colour, it.size) * it.qty)}`));
+      const d = DELIVERY.find(x => x.id === o.delivery);
+      lines.push(`Товары: ${rub(o.goods)}`, `Доставка: ${d.price == null ? 'по тарифу службы' : '≈ ' + rub(d.price)}`,
+        `Итого: ${d.price == null ? rub(o.goods) + ' + доставка' : '≈ ' + rub(o.goods + d.price)}`);
       lines.push('', `Имя: ${o.name}`, `Телефон: ${o.phone}`);
       if (o.email) lines.push(`Почта: ${o.email}`);
       lines.push(`Связь: ${{ call: 'звонок', telegram: 'Telegram', whatsapp: 'WhatsApp', max: 'Max' }[o.via]}`, '',
@@ -2437,12 +2518,13 @@
     }
     form.addEventListener('submit', async e => {
       e.preventDefault();
+      if (form.elements.website.value) return; // the hidden trap field was filled: a bot, not a buyer
       if (!validate()) return;
       const f = form.elements;
       const o = {
         id: 'EDN-' + Date.now().toString(36).slice(-6).toUpperCase(),
         createdAt: new Date().toLocaleString('ru-RU'),
-        lang, items: S.items.map(it => ({ ...it })),
+        lang, items: S.items.map(it => ({ ...it, price: priceOf(it.colour, it.size) })), goods: goodsTotal(),
         name: f.name.value.trim(), phone: f.phone.value.trim(), email: f.email.value.trim(), via: f.via.value,
         delivery: S.delivery, country: f.country.value.trim(), city: f.city.value.trim(),
         index: f.index.required ? f.index.value.trim() : '', address: f.address.value.trim(), comment: f.comment.value.trim()
