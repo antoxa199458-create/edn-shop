@@ -1195,21 +1195,18 @@
     .nav.scrolled { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(243, 240, 234, .97); }
   }
 
-  /* ---------- Black longsleeve video: it sits on black, and the frame turns black with it, so no edge shows ---------- */
-  .shop-media { transition: background-color .5s ease; }
-  .shop-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000;
-    opacity: 0; pointer-events: none; transition: opacity .55s ease; }
-  .shop-media.has-video { background: #000; }
-  .shop-media.has-video .shop-video { opacity: 1; }
-  .shop-media.has-video img { opacity: 0; }
-  /* Cut-out video: the canvas shows the girl without her black box, straight on the page; the source video plays hidden.
-     Until the first frame is drawn, a still cut-out stands in. */
+  /* ---------- Black longsleeve video: the girl without any background, straight on the page.
+     The video file carries colour and transparency side by side; it plays hidden and the canvas shows the result.
+     Until the first frame is drawn (or where WebGL is missing) a still cut-out stands in. ---------- */
+  .shop-video { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
   .shop-cut { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; opacity: 0; transition: opacity .55s ease;
     background: url(assets/shop-black-cut.webp) center / contain no-repeat; }
   .shop-cut.drawn { background: none; }
-  .shop-media.keyed.has-video { background: transparent; }
-  .shop-media.keyed.has-video .shop-video { opacity: 0; }
-  .shop-media.keyed.has-video .shop-cut { opacity: 1; }</style>
+  .shop-media { transition: background-color .55s ease; }
+  .shop-media img { transition: opacity .55s ease; }
+  .shop-media.has-video { background: transparent; }
+  .shop-media.has-video img { opacity: 0; }
+  .shop-media.has-video .shop-cut { opacity: 1; }</style>
 </head>
 <body>
 <canvas id="yarnBg" aria-hidden="true"></canvas>
@@ -1454,12 +1451,11 @@
   </section>
   <section class="wrap" id="shop">
     <div class="shop">
-      <div class="shop-media pop">
+      <div class="shop-media pop has-video">
         <img id="shopImg" src="assets/oz-15057978704-1000.webp" alt="Лонгслив E.D.N, цвет чёрный">
         <!-- the black longsleeve is shown on a girl in motion; the other colours keep their product photos -->
-        <video id="shopVideo" class="shop-video" muted loop playsinline preload="none" poster="assets/shop-black-poster.webp"
-          aria-label="Девочка в чёрном лонгсливе E.D.N с куколкой" src="assets/shop-black.mp4"></video>
-        <canvas id="shopCut" class="shop-cut" aria-hidden="true"></canvas>
+        <video id="shopVideo" class="shop-video" muted playsinline preload="none" aria-hidden="true" src="assets/shop-black-alpha.mp4"></video>
+        <canvas id="shopCut" class="shop-cut" role="img" aria-label="Девочка в чёрном лонгсливе E.D.N с куколкой"></canvas>
       </div>
       <div class="shop-panel pop">
         <p class="eyebrow" data-i18n="shop.eyebrow">06 / Коллекция <span data-season>осень–зима</span></p>
@@ -2350,130 +2346,44 @@
   });
   renderPick();
 
-  /* ---- Keyer: takes a video shot on pure black and draws it on a transparent canvas, the background removed.
-     A black longsleeve on a black background can't be cut by brightness alone, so, per frame, on the GPU:
-       1. matte: dark pixels become background (the backdrop is 0–13 of 255, the clothes mostly far above);
-       2. closing (grow, then shrink): small dark spots inside the figure — pupils, deep folds — are filled back in;
-       3. a further shrink trims the 2–4 px bright rim the original cut-out left (the "glow" along the outline);
-       4. soft blur feathers the edge, and a running mix with the previous frame keeps it from flickering.
-     The matte is worked at a quarter of the video's size (cheap on phones); colour comes from the full frame.
-     Returns null where WebGL is unavailable — the page then keeps the plain video. ---- */
-  function makeKeyer(video, canvas) {
-    const q = new URLSearchParams(location.search).get('key'); // ?key=close,trim,blur,lo,hi,push,hole to tune by eye
-    const [CLOSE, TRIM, BLUR, LO, HI, PUSH, HOLE] = q ? q.split(',').map(Number) : [3, 2, 1.2, 14, 30, 2.5, 4.5];
+  /* ---- Alpha player: the video file holds two pictures side by side — the colour on the left, the transparency
+     (white = the girl, black = nothing) on the right. Per frame the graphics card joins them and draws the girl
+     on a transparent canvas, so she stands right on the page. Returns null where WebGL is unavailable —
+     the page then keeps the still cut-out. ---- */
+  function makeAlphaPlayer(video, canvas) {
     let gl;
     try { gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: true, antialias: false }); } catch (e) { gl = null; }
     if (!gl) return null;
-    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-    const VS = 'attribute vec2 p;varying vec2 uv;void main(){uv=p*.5+.5;gl_Position=vec4(p,0.,1.);}';
-    const HEAD = 'precision mediump float;varying vec2 uv;uniform sampler2D src;';
-    const programs = {
-      // video texture rows run top-down, so it is read with y flipped; everything after works upright
-      // red = the matte, green = the raw brightness (the hole filling below tells fabric from backdrop by it)
-      matte: HEAD + `uniform float lo,hi;void main(){vec3 c=texture2D(src,vec2(uv.x,1.-uv.y)).rgb;float m=max(c.r,max(c.g,c.b));
-        gl_FragColor=vec4(smoothstep(lo,hi,m),m,0.,1.);}`,
-      morph: HEAD + `uniform vec2 dir;uniform float r,grow;void main(){float a=grow>.5?0.:1.;
-        for(int i=-8;i<=8;i++){if(abs(float(i))>r)continue;float v=texture2D(src,uv+dir*float(i)).r;a=grow>.5?max(a,v):min(a,v);}
-        gl_FragColor=vec4(a);}`,
-      blur: HEAD + `uniform vec2 dir;uniform float r;void main(){float s=0.,w=0.;
-        for(int i=-6;i<=6;i++){float x=float(i);float k=exp(-x*x/(2.*r*r+.0001));s+=texture2D(src,uv+dir*x).r*k;w+=k;}
-        gl_FragColor=vec4(s/w);}`,
-      // calms the edge flicker between frames; where the figure really moved the new frame wins at once (no trailing ghost)
-      settle: HEAD + `uniform sampler2D prev;uniform float k;void main(){float p=texture2D(prev,uv).r,c=texture2D(src,uv).r;
-        gl_FragColor=vec4(mix(p,c,max(k,smoothstep(.12,.3,abs(c-p)))));}`,
-      // alpha from the matte; along the edge the colour is taken a few pixels further inside the figure,
-      // so the old bright rim never reaches the screen; written premultiplied for the page to blend
-      out: HEAD + `uniform sampler2D matte,gap;uniform vec2 px;uniform float push;void main(){float a=texture2D(matte,uv).r*(1.-texture2D(gap,uv).r);
-        vec2 g=vec2(texture2D(matte,uv+vec2(px.x,0.)).r-texture2D(matte,uv-vec2(px.x,0.)).r,texture2D(matte,uv+vec2(0.,px.y)).r-texture2D(matte,uv-vec2(0.,px.y)).r);
-        float l=length(g);vec2 s=uv+(l>.001?g/l:vec2(0.))*px*push*step(a,.985);
-        vec3 c=texture2D(src,vec2(s.x,1.-s.y)).rgb;gl_FragColor=vec4(c*a,a);}`
-    };
     const compile = (type, src) => { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); return s; };
-    const P = {};
-    for (const k in programs) {
-      const p = gl.createProgram();
-      gl.attachShader(p, compile(gl.VERTEX_SHADER, VS)); gl.attachShader(p, compile(gl.FRAGMENT_SHADER, programs[k]));
-      gl.bindAttribLocation(p, 0, 'p'); gl.linkProgram(p);
-      if (!gl.getProgramParameter(p, gl.LINK_STATUS)) return null;
-      P[k] = p;
-    }
-    const quad = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+    const prog = gl.createProgram();
+    gl.attachShader(prog, compile(gl.VERTEX_SHADER, 'attribute vec2 p;varying vec2 uv;void main(){uv=vec2(p.x*.5+.5,.5-p.y*.5);gl_Position=vec4(p,0.,1.);}'));
+    // edge texels of each half are kept off the seam, so the colour never borrows from the mask beside it
+    gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, `precision mediump float;varying vec2 uv;uniform sampler2D frame;uniform float texel;
+      void main(){float x=clamp(uv.x*.5,texel,.5-texel);vec3 c=texture2D(frame,vec2(x,uv.y)).rgb;
+        float a=clamp((texture2D(frame,vec2(x+.5,uv.y)).r-.008)/.984,0.,1.);gl_FragColor=vec4(c*a,a);}`));
+    gl.bindAttribLocation(prog, 0, 'p'); gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return null;
+    gl.useProgram(prog);
+    gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(0); gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
-    const tex = () => { const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D, t);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); return t; };
-    const videoTex = tex();
-    let mw = 0, mh = 0, buf = [], hist = [], histIdx = 0, fresh = true;
-    function target(w, h) { const t = tex(); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-      const f = gl.createFramebuffer(); gl.bindFramebuffer(gl.FRAMEBUFFER, f); gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, t, 0); return { t, f }; }
-    function pass(prog, from, to, uni) {
-      gl.useProgram(prog); gl.bindFramebuffer(gl.FRAMEBUFFER, to ? to.f : null);
-      if (to) gl.viewport(0, 0, mw, mh);
-      gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, from); gl.uniform1i(gl.getUniformLocation(prog, 'src'), 0);
-      let unit = 1;
-      for (const k in uni) { const u = uni[k], loc = gl.getUniformLocation(prog, k);
-        if (u.tex) { gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, u.tex); gl.uniform1i(loc, unit++); }
-        else if (Array.isArray(u)) gl.uniform2fv(loc, u); else gl.uniform1f(loc, u); }
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
-    }
-    // background is the darkness that reaches the frame's border; dark patches enclosed by the figure are
-    // filled in — folds of the black longsleeve, pupils — unless they are as pitch-black as the backdrop
-    // (the gap between the legs), which stays see-through — and is cut out again after the edge smoothing,
-    // which would otherwise close such a narrow gap
-    let px, seen, queue, gaps;
-    const gapTex = tex();
-    function fillHoles(t) {
-      const n = mw * mh;
-      if (!px) { px = new Uint8Array(n * 4); seen = new Uint8Array(n); queue = new Int32Array(n); gaps = new Uint8Array(n); }
-      gaps.fill(0);
-      gl.bindFramebuffer(gl.FRAMEBUFFER, t.f); gl.readPixels(0, 0, mw, mh, gl.RGBA, gl.UNSIGNED_BYTE, px);
-      seen.fill(0);
-      let head = 0, tail = 0;
-      const push = i => { if (!seen[i] && px[i * 4] < 128) { seen[i] = 1; queue[tail++] = i; } };
-      for (let x = 0; x < mw; x++) { push(x); push(n - mw + x); }
-      for (let y = 0; y < mh; y++) { push(y * mw); push(y * mw + mw - 1); }
-      while (head < tail) { const i = queue[head++], x = i % mw;
-        if (x > 0) push(i - 1); if (x < mw - 1) push(i + 1); if (i >= mw) push(i - mw); if (i < n - mw) push(i + mw); }
-      for (let s = 0; s < n; s++) {
-        if (seen[s] || px[s * 4] >= 128) continue;
-        head = tail = 0; push(s);
-        let sum = 0;
-        while (head < tail) { const i = queue[head++], x = i % mw; sum += px[i * 4 + 1];
-          if (x > 0) push(i - 1); if (x < mw - 1) push(i + 1); if (i >= mw) push(i - mw); if (i < n - mw) push(i + mw); }
-        const fill = sum / tail > HOLE;
-        for (let k = 0; k < tail; k++) if (fill) px[queue[k] * 4] = 255; else gaps[queue[k]] = 255;
-      }
-      for (let i = 0; i < n; i++) if (!seen[i]) px[i * 4] = 255;
-      gl.bindTexture(gl.TEXTURE_2D, t.t); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, mw, mh, 0, gl.RGBA, gl.UNSIGNED_BYTE, px);
-      gl.bindTexture(gl.TEXTURE_2D, gapTex); gl.texImage2D(gl.TEXTURE_2D, 0, gl.LUMINANCE, mw, mh, 0, gl.LUMINANCE, gl.UNSIGNED_BYTE, gaps);
-    }
-    let lastTime = -1;
-    function draw(restart) {
-      const vw = video.videoWidth, vh = video.videoHeight;
+    gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+    for (const p of [gl.TEXTURE_MIN_FILTER, gl.TEXTURE_MAG_FILTER]) gl.texParameteri(gl.TEXTURE_2D, p, gl.LINEAR);
+    for (const p of [gl.TEXTURE_WRAP_S, gl.TEXTURE_WRAP_T]) gl.texParameteri(gl.TEXTURE_2D, p, gl.CLAMP_TO_EDGE);
+    gl.uniform1i(gl.getUniformLocation(prog, 'frame'), 0);
+    const texelLoc = gl.getUniformLocation(prog, 'texel');
+    function draw() {
+      const vw = video.videoWidth / 2, vh = video.videoHeight;
       if (!vw || video.readyState < 2) return;
-      // a jump (seek, or the loop starting over) has nothing to settle against
-      if (restart === true || video.currentTime < lastTime) fresh = true;
-      lastTime = video.currentTime;
-      if (!mw) { mw = Math.round(vw / 4); mh = Math.round(vh / 4); buf = [target(mw, mh), target(mw, mh)]; hist = [target(mw, mh), target(mw, mh)]; }
-      gl.bindTexture(gl.TEXTURE_2D, videoTex);
       gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
-      const sx = [1 / mw, 0], sy = [0, 1 / mh], [A, B] = buf;
-      pass(P.matte, videoTex, A, { lo: LO / 255, hi: HI / 255 });
-      fillHoles(A);
-      pass(P.morph, A.t, B, { dir: sx, r: CLOSE, grow: 1 }); pass(P.morph, B.t, A, { dir: sy, r: CLOSE, grow: 1 });
-      pass(P.morph, A.t, B, { dir: sx, r: CLOSE + TRIM, grow: 0 }); pass(P.morph, B.t, A, { dir: sy, r: CLOSE + TRIM, grow: 0 });
-      pass(P.blur, A.t, B, { dir: sx, r: BLUR }); pass(P.blur, B.t, A, { dir: sy, r: BLUR });
-      const prev = hist[histIdx], next = hist[1 - histIdx];
-      pass(P.settle, A.t, next, { prev: { tex: prev.t }, k: fresh ? 1 : 0.55 });
-      histIdx = 1 - histIdx; fresh = false;
-      // final picture: fit the whole video into the canvas (like object-fit: contain), transparent around it
+      gl.uniform1f(texelLoc, .5 / video.videoWidth);
+      // fit the girl into the canvas (like object-fit: contain), transparent around her
       const dpr = Math.min(window.devicePixelRatio || 1, 2), cw = Math.round(canvas.clientWidth * dpr), ch = Math.round(canvas.clientHeight * dpr);
       if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
       const s = Math.min(cw / vw, ch / vh), w = Math.round(vw * s), h = Math.round(vh * s);
-      gl.bindFramebuffer(gl.FRAMEBUFFER, null); gl.viewport(0, 0, cw, ch); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
+      gl.viewport(0, 0, cw, ch); gl.clearColor(0, 0, 0, 0); gl.clear(gl.COLOR_BUFFER_BIT);
       gl.viewport((cw - w) >> 1, (ch - h) >> 1, w, h);
-      pass(P.out, videoTex, null, { matte: { tex: next.t }, gap: { tex: gapTex }, px: [1 / mw, 1 / mh], push: PUSH });
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       canvas.classList.add('drawn');
     }
     let running = false;
@@ -2481,33 +2391,34 @@
       if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(tick); else requestAnimationFrame(tick); };
     return {
       draw,
-      run(on) { if (on === running) return; running = on; if (on) { fresh = true; tick(); } }
+      run(on) { if (on === running) return; running = on; if (on) tick(); }
     };
   }
 
-  /* The black longsleeve plays as a short looping video of a girl wearing it; other colours show their photo.
-     The video loads only when the shop is near, plays only while it is on screen, and stays a still frame
-     for visitors who ask for less motion. */
+  /* The black longsleeve shows a short video of the girl turning once in it; other colours show their photo.
+     The video loads only when the shop is near and plays once, while it is on screen; then she stays on the last
+     frame (no endless loop). Visitors who ask for less motion see the still first frame. */
   const shopVideo = document.getElementById('shopVideo');
   const shopMedia = shopImg.parentElement;
   let shopVisible = false;
-  // the girl is cut out of her black background on the graphics card and laid over the page (no box around her)
-  const keyer = makeKeyer(shopVideo, document.getElementById('shopCut'));
-  if (keyer) shopMedia.classList.add('keyed');
+  const player = makeAlphaPlayer(shopVideo, document.getElementById('shopCut'));
   function playShopVideo() {
-    const on = shopMedia.classList.contains('has-video') && shopVisible && !reduced;
+    const on = !!player && shopMedia.classList.contains('has-video') && shopVisible && !reduced && !shopVideo.ended;
     if (on) { const p = shopVideo.play(); if (p) p.catch(() => {}); } else shopVideo.pause();
-    if (keyer) keyer.run(on);
+    if (player) player.run(on);
   }
   function showShopMedia() {
     shopMedia.classList.toggle('has-video', pick.colour === 'black');
     playShopVideo();
   }
-  // still visitors (less motion) and a paused video still get the cut-out first frame
-  shopVideo.addEventListener('loadeddata', () => keyer && keyer.draw(true));
-  shopVideo.addEventListener('seeked', () => keyer && keyer.draw(true));
+  if (player) {
+    shopVideo.addEventListener('loadeddata', () => player.draw());
+    shopVideo.addEventListener('seeked', () => player.draw());
+    // the turn is over: draw the very last frame and stop — she stays standing like that
+    shopVideo.addEventListener('ended', () => { player.draw(); player.run(false); });
+  }
   new IntersectionObserver(entries => entries.forEach(en => {
-    if (en.isIntersecting && shopVideo.preload === 'none') shopVideo.preload = 'auto';
+    if (en.isIntersecting && player && shopVideo.preload === 'none') shopVideo.preload = 'auto';
   }), { rootMargin: '120% 0px' }).observe(shopMedia);
   new IntersectionObserver(entries => entries.forEach(en => { shopVisible = en.isIntersecting; playShopVideo(); }), { threshold: 0.2 }).observe(shopMedia);
   document.addEventListener('visibilitychange', () => { if (document.hidden) shopVideo.pause(); else playShopVideo(); });
