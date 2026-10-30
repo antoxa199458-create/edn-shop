@@ -1194,7 +1194,14 @@
     .btn-order { animation: none; }
     .nav.scrolled { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(243, 240, 234, .97); }
   }
-</style>
+
+  /* ---------- Black longsleeve video: it sits on black, and the frame turns black with it, so no edge shows ---------- */
+  .shop-media { transition: background-color .5s ease; }
+  .shop-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; background: #000;
+    opacity: 0; pointer-events: none; transition: opacity .55s ease; }
+  .shop-media.has-video { background: #000; }
+  .shop-media.has-video .shop-video { opacity: 1; }
+  .shop-media.has-video img { opacity: 0; }</style>
 </head>
 <body>
 <canvas id="yarnBg" aria-hidden="true"></canvas>
@@ -1441,6 +1448,9 @@
     <div class="shop">
       <div class="shop-media pop">
         <img id="shopImg" src="assets/oz-15057978704-1000.webp" alt="Лонгслив E.D.N, цвет чёрный">
+        <!-- the black longsleeve is shown on a girl in motion; the other colours keep their product photos -->
+        <video id="shopVideo" class="shop-video" muted loop playsinline preload="none" poster="assets/shop-black-poster.webp"
+          aria-label="Девочка в чёрном лонгсливе E.D.N с куколкой" src="assets/shop-black.mp4"></video>
       </div>
       <div class="shop-panel pop">
         <p class="eyebrow" data-i18n="shop.eyebrow">06 / Коллекция <span data-season>осень–зима</span></p>
@@ -2304,6 +2314,7 @@
       btn.setAttribute('aria-pressed', 'true');
       pick.colour = btn.dataset.colour;
       renderPick();
+      showShopMedia();
       // phones: if the photo has slid up under the header, bring it back so the new colour is seen at once
       if (matchMedia('(max-width: 860px)').matches) {
         const r = shopImg.parentElement.getBoundingClientRect();
@@ -2329,6 +2340,27 @@
     });
   });
   renderPick();
+
+  /* The black longsleeve plays as a short looping video of a girl wearing it; other colours show their photo.
+     The video loads only when the shop is near, plays only while it is on screen, and stays a still frame
+     for visitors who ask for less motion. */
+  const shopVideo = document.getElementById('shopVideo');
+  const shopMedia = shopImg.parentElement;
+  let shopVisible = false;
+  function playShopVideo() {
+    const on = shopMedia.classList.contains('has-video') && shopVisible && !reduced;
+    if (on) { const p = shopVideo.play(); if (p) p.catch(() => {}); } else shopVideo.pause();
+  }
+  function showShopMedia() {
+    shopMedia.classList.toggle('has-video', pick.colour === 'black');
+    playShopVideo();
+  }
+  new IntersectionObserver(entries => entries.forEach(en => {
+    if (en.isIntersecting && shopVideo.preload === 'none') shopVideo.preload = 'auto';
+  }), { rootMargin: '120% 0px' }).observe(shopMedia);
+  new IntersectionObserver(entries => entries.forEach(en => { shopVisible = en.isIntersecting; playShopVideo(); }), { threshold: 0.2 }).observe(shopMedia);
+  document.addEventListener('visibilitychange', () => { if (document.hidden) shopVideo.pause(); else playShopVideo(); });
+  showShopMedia();
 
   /* ---- Direct order: a drawer that slides in from any "Order on the site" button and folds away again ---- */
   (() => {
