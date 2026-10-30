@@ -1131,7 +1131,7 @@
 
 <header class="hero ed-hero" id="top">
   <div class="ed-hero-copy">
-    <p class="ed-kicker fade-up" style="--delay:.1s"><i class="micro-line"></i><span data-i18n="hero.kicker1">E.D.N · коллекция осень–зима</span> <span class="ed-star">✦</span> <span data-i18n="hero.kicker2">создано для игры</span></p>
+    <p class="ed-kicker fade-up" style="--delay:.1s"><i class="micro-line"></i><span data-i18n="hero.kicker1">E.D.N · коллекция <span data-season>осень–зима</span></span> <span class="ed-star">✦</span> <span data-i18n="hero.kicker2">создано для игры</span></p>
     <h1 class="ed-headline split" data-split data-i18n="hero.title">Одежда,<br>в&nbsp;которой<br><em>живёт игра</em></h1>
     <p class="ed-lead fade-up" style="--delay:.85s" data-i18n="hero.lead">Маленький мир больших фантазий. Лонгслив с куколкой, которой можно менять причёску, платье и обувь.</p>
     <div class="ed-actions fade-up" style="--delay:1s">
@@ -1353,7 +1353,7 @@
         <img id="shopImg" src="assets/oz-15057978704-1000.webp" alt="Лонгслив E.D.N, цвет чёрный">
       </div>
       <div class="shop-panel pop">
-        <p class="eyebrow" data-i18n="shop.eyebrow">06 / Коллекция осень–зима</p>
+        <p class="eyebrow" data-i18n="shop.eyebrow">06 / Коллекция <span data-season>осень–зима</span></p>
         <h2 class="heading-lg" data-i18n="shop.title">Интерактивный лонгслив</h2>
         <a class="rating" data-ozon="source" href="https://www.ozon.ru/product/longsliv-e-d-n-5747080780/reviews/" target="_blank" rel="noopener">
           <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z" fill="#0d0d0d"/></svg>
@@ -1648,6 +1648,14 @@
     document.querySelectorAll('[data-ozon="source"]').forEach(el => el.href = OZON.reviewsUrl);
   }
   fillOzon();
+  // the collection follows the calendar: the current season and the next, changing every three months
+  // (Dec–Feb winter–spring, Mar–May spring–summer, Jun–Aug summer–autumn, Sep–Nov autumn–winter); ?season=0..3 previews one
+  function fillSeason() {
+    const forced = new URLSearchParams(location.search).get('season');
+    const q = /^[0-3]$/.test(forced || '') ? +forced : Math.floor(((new Date().getMonth() + 1) % 12) / 3);
+    document.querySelectorAll('[data-season]').forEach(el => el.textContent = t('season.' + q));
+  }
+  fillSeason();
   const ease = t => 1 - Math.pow(1 - t, 3);
   // overshoot ease for the "snap" onto velcro
   const back = t => { const c = 1.9; return 1 + (c + 1) * Math.pow(t - 1, 3) + c * Math.pow(t - 1, 2); };
@@ -2441,7 +2449,7 @@
       });
       document.title = c === 'ru' ? RU_META.title : t('meta.title');
       meta.content = c === 'ru' ? RU_META.desc : t('meta.desc');
-      fillOzon();
+      fillOzon(); fillSeason();
       try { localStorage.setItem('edn-lang', c); } catch (e) {}
       dispatchEvent(new Event('edn:lang'));
     }

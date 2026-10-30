@@ -21,6 +21,8 @@ window.EDN_I18N = {
   dict: {
     ru: {
       reviews: ['{n} отзыв', '{n} отзыва', '{n} отзывов'],
+      // collection by the calendar: 0 = Dec–Feb, 1 = Mar–May, 2 = Jun–Aug, 3 = Sep–Nov
+      'season.0': 'зима–весна', 'season.1': 'весна–лето', 'season.2': 'лето–осень', 'season.3': 'осень–зима',
       age: ['{n} год', '{n} года', '{n} лет'],
       'col.black': 'Чёрный', 'col.anthracite': 'Антрацит', 'col.mint': 'Ментол', 'col.pink': 'Розовый',
       'cz.hairL': 'Косы из пряжи', 'cz.dressL': 'Платье с пачкой', 'cz.shoesL': 'Туфли с блёстками',
